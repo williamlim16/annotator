@@ -1,8 +1,31 @@
 "use client"
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
+import { IoIosSave } from "react-icons/io";
+
+import Cookies from 'js-cookie';
+
+import { useForm } from "react-hook-form"
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "~/components/ui/form"
+
+const formSchema = z.object({
+  source: z.string({
+    required_error: "You need to select a notification type.",
+  }),
+})
 
 export default function HomePage() {
   const [path, setPath] = useState<string>("")
@@ -11,6 +34,35 @@ export default function HomePage() {
   async function SearchPath() {
     let res = await (await fetch(`/api?query=${path}`)).json()
     setListFiles(res)
+  }
+
+  useEffect(() => {
+    const savedPath = Cookies.get('videoPath');
+    if (savedPath) {
+      setPath(savedPath);
+    } else if (path) {
+      SavePath();
+    }
+  }, []);
+
+  useEffect(() => {
+    if (path) {
+      SavePath();
+    }
+  }, [path]);
+
+  const SavePath = useCallback(() => {
+    Cookies.set('videoPath', path)
+  }, [path])
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      source: "",
+    },
+  })
+
+  function onSubmit(values: z.infer<typeof formSchema>) {
+    console.log(values)
   }
 
   return (
@@ -23,7 +75,7 @@ export default function HomePage() {
           Annotation tool for Pose Estimation project
         </p>
         <h2 className="mt-10 scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">
-          Select your source
+          Configuration
         </h2>
         <div className="flex items-center gap-1 pt-1">
           <div className="grow">
@@ -34,12 +86,50 @@ export default function HomePage() {
                 setPath(event.target.value);
               }}
             />
-
           </div>
           <Button className=" h-auto self-stretch" variant={"ghost"} onClick={SearchPath}>Go</Button>
+          <Button className=" h-auto self-stretch" variant={"ghost"} onClick={SavePath}><IoIosSave /></Button>
         </div>
-        {JSON.stringify(listFiles)}
-      </div>
-    </div>
+
+        <h3 className="mt-10 scroll-m-20 border-b pb-2 text-2xl font-semibold tracking-tight transition-colors first:mt-0">
+          Available videos
+        </h3>
+
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            <FormField
+              control={form.control}
+              name="source"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <RadioGroup className="pt-5" onValueChange={field.onChange} defaultValue={field.value}>
+                      {listFiles.length !== 0 && listFiles.map((file) => {
+                        return (
+                          <FormItem className="flex items-center space-x-2" key={file}>
+                            <FormControl>
+                              <RadioGroupItem value={file} id={file} />
+                            </FormControl>
+                            <FormLabel>
+                              {file}
+                            </FormLabel>
+                          </FormItem>
+                        )
+                      })}
+                    </RadioGroup>
+                  </FormControl>
+                  <FormDescription>
+                    This is your public display name.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit">Use Video</Button>
+          </form>
+        </Form>
+      </div >
+    </div >
+
   );
 }
