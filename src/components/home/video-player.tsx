@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
+import { FaPlay, FaPause } from "react-icons/fa";
 
 export default function VideoPlayer({ src }: { src: string }) {
   const [frame, setFrame] = useState<number>(0);
@@ -34,9 +35,35 @@ export default function VideoPlayer({ src }: { src: string }) {
             <Button variant="outline" onClick={() => {
               const video = videoRef.current;
               if (video) {
+                video.currentTime -= 10 / 10;
+              }
+            }}>-10</Button>
+            <Button variant="outline" onClick={() => {
+              const video = videoRef.current;
+              if (video) {
+                video.play();
+              }
+            }}><FaPlay />
+            </Button>
+            <Button variant="outline" onClick={() => {
+              const video = videoRef.current;
+              if (video) {
+                video.pause();
+              }
+            }}><FaPause />
+            </Button>
+            <Button variant="outline" onClick={() => {
+              const video = videoRef.current;
+              if (video) {
                 video.currentTime += 1 / 10;
               }
             }}>+1</Button>
+            <Button variant="outline" onClick={() => {
+              const video = videoRef.current;
+              if (video) {
+                video.currentTime += 10 / 10;
+              }
+            }}>+10</Button>
           </div>
         </div>
 
