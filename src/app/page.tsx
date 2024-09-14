@@ -23,7 +23,9 @@ import {
 
 const formSchema = z.object({
   source: z.string({
-    required_error: "You need to select a notification type.",
+    required_error: "Need to be a string",
+  }).refine(value => value !== "", {
+    message: "You should select a video",
   }),
 })
 
@@ -57,8 +59,17 @@ export default function HomePage() {
   })
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const videoPath = `${path}/${values.source}`;
-    setSelectedVideo(videoPath);
+    try {
+      const validatedValues = formSchema.parse(values);
+      const videoPath = `${path}/${validatedValues.source}`;
+      setSelectedVideo(videoPath);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        console.error("Validation error:", error.errors);
+      } else {
+        console.error("An unexpected error occurred:", error);
+      }
+    }
   }
 
   return (
@@ -114,9 +125,6 @@ export default function HomePage() {
                       })}
                     </RadioGroup>
                   </FormControl>
-                  <FormDescription>
-                    This is your public display name.
-                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
