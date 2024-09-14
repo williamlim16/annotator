@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from "~/components/ui/radio-group";
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { IoIosSave } from "react-icons/io";
-
+import VideoPlayer from "~/components/home/video-player";
 import Cookies from 'js-cookie';
 
 import { useForm } from "react-hook-form"
@@ -30,6 +30,7 @@ const formSchema = z.object({
 export default function HomePage() {
   const [path, setPath] = useState<string>("")
   const [listFiles, setListFiles] = useState<string[]>([])
+  const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
 
   async function SearchPath() {
     let res = await (await fetch(`/api?query=${path}`)).json()
@@ -45,12 +46,6 @@ export default function HomePage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (path) {
-      SavePath();
-    }
-  }, [path]);
-
   const SavePath = useCallback(() => {
     Cookies.set('videoPath', path)
   }, [path])
@@ -62,12 +57,13 @@ export default function HomePage() {
   })
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
+    const videoPath = `${path}/${values.source}`;
+    setSelectedVideo(videoPath);
   }
 
   return (
-    <div className="h-screen grid grid-cols-4">
-      <div className="col-start-2 col-span-2">
+    <div className="h-screen grid grid-cols-7">
+      <div className="col-start-2 col-span-5">
         <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
           Annotator tool
         </h1>
@@ -87,8 +83,8 @@ export default function HomePage() {
               }}
             />
           </div>
-          <Button className=" h-auto self-stretch" variant={"ghost"} onClick={SearchPath}>Go</Button>
-          <Button className=" h-auto self-stretch" variant={"ghost"} onClick={SavePath}><IoIosSave /></Button>
+          <Button className=" h-auto self-stretch" variant={"outline"} onClick={SearchPath}>Go</Button>
+          <Button className=" h-auto self-stretch" variant={"outline"} onClick={SavePath}><IoIosSave /></Button>
         </div>
 
         <h3 className="mt-10 scroll-m-20 border-b pb-2 text-2xl font-semibold tracking-tight transition-colors first:mt-0">
@@ -128,8 +124,8 @@ export default function HomePage() {
             <Button type="submit">Use Video</Button>
           </form>
         </Form>
+        {selectedVideo && <VideoPlayer src={selectedVideo} />}
       </div >
     </div >
-
   );
 }
