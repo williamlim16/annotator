@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { FaPlay, FaPause, FaArrowDown, FaArrowUp, FaArrowRight, FaArrowLeft } from "react-icons/fa";
@@ -10,6 +10,8 @@ export default function VideoPlayer({ src }: { src: string }) {
   const [magnification, setMagnification] = useState<number>(1);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -50,10 +52,29 @@ export default function VideoPlayer({ src }: { src: string }) {
     }
   }, [frame]);
 
-  const moveOffset = (dx: number, dy: number) => {
+  const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    setIsDragging(true);
+    setDragStart({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  const moveOffset = useCallback((dx: number, dy: number) => {
     setOffsetX(prev => Math.max(0, Math.min(prev + dx, videoRef.current!.videoWidth * (magnification - 1))));
     setOffsetY(prev => Math.max(0, Math.min(prev + dy, videoRef.current!.videoHeight * (magnification - 1))));
-  };
+  }, [magnification]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isDragging) {
+      const dx = dragStart.x - e.clientX;
+      const dy = dragStart.y - e.clientY;
+      moveOffset(dx, dy);
+      setDragStart({ x: e.clientX, y: e.clientY });
+    }
+  }, [isDragging, dragStart, moveOffset]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
 
   const reset = () => {
     setMagnification(1);
@@ -70,7 +91,11 @@ export default function VideoPlayer({ src }: { src: string }) {
         </video>
         <canvas
           ref={canvasRef}
-          className="absolute top-0 left-0 w-full h-full pointer-events-none"
+          className="absolute top-0 left-0 w-full h-full cursor-move"
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
         />
       </div>
       <div className="w-full">
