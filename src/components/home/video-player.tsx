@@ -4,6 +4,13 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { FaPlay, FaPause, FaArrowDown, FaArrowUp, FaArrowRight, FaArrowLeft } from "react-icons/fa";
+import Recorder from "./recorder";
+
+export type FrameRange = {
+  id: number;
+  start_frame: number;
+  end_frame: number;
+};
 
 export default function VideoPlayer({ src }: { src: string }) {
   const [frame, setFrame] = useState<number>(0);
@@ -14,35 +21,51 @@ export default function VideoPlayer({ src }: { src: string }) {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rafRef = useRef<number | null>(null);
 
-  const moveFrame = (frames: number) => {
-    setFrame(frame + frames);
-  };
-
-  useEffect(() => {
+  const drawMagnifiedFrame = useCallback(() => {
     const video = videoRef.current;
     const canvas = canvasRef.current;
     if (video && canvas) {
       const context = canvas.getContext('2d');
       if (context) {
-        const drawMagnifiedFrame = () => {
-          const { videoWidth, videoHeight } = video;
-          canvas.width = videoWidth;
-          canvas.height = videoHeight;
+        const { videoWidth, videoHeight } = video;
+        canvas.width = videoWidth;
+        canvas.height = videoHeight;
 
-          const magnifiedWidth = videoWidth * magnification;
-          const magnifiedHeight = videoHeight * magnification;
+        const magnifiedWidth = videoWidth * magnification;
+        const magnifiedHeight = videoHeight * magnification;
 
-          context.drawImage(
-            video,
-            -offsetX, -offsetY, magnifiedWidth, magnifiedHeight
-          );
-          requestAnimationFrame(drawMagnifiedFrame);
-        };
-        drawMagnifiedFrame();
+        context.drawImage(
+          video,
+          -offsetX, -offsetY, magnifiedWidth, magnifiedHeight
+        );
       }
     }
   }, [magnification, offsetX, offsetY]);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      const handleTimeUpdate = () => {
+        drawMagnifiedFrame();
+      };
+
+      video.addEventListener('timeupdate', handleTimeUpdate);
+
+      return () => {
+        video.removeEventListener('timeupdate', handleTimeUpdate);
+      };
+    }
+  }, [drawMagnifiedFrame]);
+
+  useEffect(() => {
+    drawMagnifiedFrame();
+  }, [magnification, offsetX, offsetY, drawMagnifiedFrame]);
+
+  const moveFrame = (frames: number) => {
+    setFrame(frame + frames);
+  };
 
   useEffect(() => {
     const video = videoRef.current;
@@ -75,7 +98,6 @@ export default function VideoPlayer({ src }: { src: string }) {
     setIsDragging(false);
   }, []);
 
-
   const reset = () => {
     setMagnification(1);
     setOffsetX(0);
@@ -83,7 +105,7 @@ export default function VideoPlayer({ src }: { src: string }) {
   };
 
   return (
-    <div className="flex gap-4">
+    <div className="flex gap-4 pb-44">
       <div className="relative w-full mt-4">
         <video className="w-full" ref={videoRef}>
           <source src={`/api/video?path=${encodeURIComponent(src)}`} type="video/mp4" />
@@ -153,9 +175,14 @@ export default function VideoPlayer({ src }: { src: string }) {
           </div>
         </div>
 
-        <h4 className="text-sm text-gray-500">
-          Record
-        </h4>
+        <div className="border border-gray-300 rounded-md p-2 mb-2">
+          <h4 className="text-sm text-gray-500">
+            Record
+          </h4>
+          <div className="pt-3">
+            <Recorder />
+          </div>
+        </div>
       </div>
     </div>
   );
