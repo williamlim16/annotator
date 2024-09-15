@@ -35,7 +35,7 @@ export default function HomePage() {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
 
   async function SearchPath() {
-    let res = await (await fetch(`/api?query=${path}`)).json()
+    let res = await (await fetch(`/api/files?query=${path}`)).json()
     setListFiles(res)
   }
 
