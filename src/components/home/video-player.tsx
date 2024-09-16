@@ -5,15 +5,20 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { FaPlay, FaPause, FaArrowDown, FaArrowUp, FaArrowRight, FaArrowLeft } from "react-icons/fa";
 import Recorder from "./recorder";
+import { create } from "zustand";
 
-export type FrameRange = {
-  id: number;
-  start_frame: number;
-  end_frame: number;
-};
+interface VideoPlayerStore {
+  frame: number;
+  setFrame: (frame: number) => void;
+}
+
+export const useVideoPlayerStore = create<VideoPlayerStore>((set) => ({
+  frame: 0,
+  setFrame: (frame) => set({ frame }),
+}));
 
 export default function VideoPlayer({ src }: { src: string }) {
-  const [frame, setFrame] = useState<number>(0);
+  const { frame, setFrame } = useVideoPlayerStore();
   const [magnification, setMagnification] = useState<number>(1);
   const [offsetX, setOffsetX] = useState(0);
   const [offsetY, setOffsetY] = useState(0);
@@ -22,6 +27,20 @@ export default function VideoPlayer({ src }: { src: string }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
+  const [videoSize, setVideoSize] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      const updateVideoSize = () => {
+        setVideoSize({ width: video.videoWidth, height: video.videoHeight });
+      };
+      video.addEventListener('loadedmetadata', updateVideoSize);
+      return () => {
+        video.removeEventListener('loadedmetadata', updateVideoSize);
+      };
+    }
+  }, []);
 
   const drawMagnifiedFrame = useCallback(() => {
     const video = videoRef.current;
@@ -29,12 +48,11 @@ export default function VideoPlayer({ src }: { src: string }) {
     if (video && canvas) {
       const context = canvas.getContext('2d');
       if (context) {
-        const { videoWidth, videoHeight } = video;
-        canvas.width = videoWidth;
-        canvas.height = videoHeight;
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
 
-        const magnifiedWidth = videoWidth * magnification;
-        const magnifiedHeight = videoHeight * magnification;
+        const magnifiedWidth = video.videoWidth * magnification;
+        const magnifiedHeight = video.videoHeight * magnification;
 
         context.drawImage(
           video,
@@ -113,7 +131,13 @@ export default function VideoPlayer({ src }: { src: string }) {
         </video>
         <canvas
           ref={canvasRef}
-          className="absolute top-0 left-0 w-full h-full cursor-move"
+          className="absolute top-0 left-0 cursor-move"
+          style={{
+            width: `${videoSize.width}px`,
+            height: `${videoSize.height}px`,
+            maxWidth: '100%',
+            maxHeight: '100%',
+          }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}

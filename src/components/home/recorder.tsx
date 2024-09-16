@@ -4,8 +4,15 @@ import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { DialogHeader, DialogFooter } from "~/components/ui/dialog";
 import { useState } from "react";
-import { FrameRange } from "./video-player";
 import { checkPath, loadJSON } from "~/app/actions/files";
+import DataTable from "./data-table";
+import { columns } from "./columns";
+
+export type FrameRange = {
+  id: number;
+  start_frame: number;
+  end_frame: number;
+};
 
 type FrameStart = Omit<FrameRange, 'end_frame'>;
 // const data: JSONDataStructure = {
@@ -30,7 +37,7 @@ type FrameStart = Omit<FrameRange, 'end_frame'>;
 //   ]
 // };
 
-type JSONDataStructure = {
+export type JSONDataStructure = {
   incorrect_location: FrameRange[];
   duplicate: FrameRange[];
 };
@@ -48,8 +55,8 @@ export default function Recorder() {
     const isValid = await checkPath(dataPath);
     setDataPathOK(isValid);
     if (isValid) {
-      const data = await loadJSON(dataPath);
-      setData(data);
+      const loadedData = await loadJSON(dataPath);
+      setData(loadedData);
     }
   };
 
@@ -93,7 +100,7 @@ export default function Recorder() {
           </DialogContent>
         </Dialog>
       )}
+      <DataTable columns={columns} data={data.incorrect_location} />
     </div>
-
   )
 }
