@@ -73,7 +73,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="h-screen flex flex-col max-w-7xl mx-auto">
+    <div className="h-screen flex flex-col w-full px-10 mx-auto">
       <div className="col-start-2 col-span-5">
         <h1 className="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
           Annotator tool

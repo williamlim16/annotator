@@ -1,4 +1,4 @@
-import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription } from "~/components/ui/dialog";
+import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogClose } from "~/components/ui/dialog";
 import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
@@ -9,6 +9,7 @@ import DataTable from "./data-table";
 import { columns } from "./columns";
 import Cookies from 'js-cookie';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
+import { useToast } from "~/hooks/use-toast";
 
 export type FrameRange = {
   id: number;
@@ -17,27 +18,6 @@ export type FrameRange = {
 };
 
 type FrameStart = Omit<FrameRange, 'end_frame'>;
-// const data: JSONDataStructure = {
-//   "incorrect_location": [
-//     {
-//       "id": 5,
-//       "start_frame": 2,
-//       "end_frame": 5
-//     },
-//     {
-//       "id": 6,
-//       "start_frame": 6,
-//       "end_frame": 7
-//     },
-//   ],
-//   "duplicate": [
-//     {
-//       "id": 1,
-//       "start_frame": 1,
-//       "end_frame": 2
-//     },
-//   ]
-// };
 
 export type JSONDataStructure = {
   incorrect_location: FrameRange[];
@@ -45,13 +25,18 @@ export type JSONDataStructure = {
 };
 
 export default function Recorder() {
+  const { toast } = useToast();
   const [dataPath, setDataPath] = useState<string>('');
   const [dataPathOK, setDataPathOK] = useState<boolean>(false);
   const [records, setRecords] = useState<FrameStart[]>([]);
+  const [endFrames, setEndFrames] = useState<{ [key: string]: number }>({});
   const [data, setData] = useState<JSONDataStructure>({
     incorrect_location: [],
     duplicate: []
   });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [personId, setPersonId] = useState<number>(0);
+  const [startFrame, setStartFrame] = useState<number>(0);
 
   const SavePath = useCallback(() => {
     Cookies.set('jsonPath', dataPath)
@@ -73,6 +58,27 @@ export default function Recorder() {
     }
   };
 
+  const handleRecord = () => {
+    setDialogOpen(false);
+    toast({
+      title: 'Record Annotation',
+      description: (
+        <div className="mt-2 flex flex-col space-y-2">
+          <div>Person ID: {personId}</div>
+          <div>Start Frame: {startFrame}</div>
+        </div>
+      ),
+      duration: 3000,
+    });
+    const newRecord = { id: personId, start_frame: startFrame };
+    setRecords([...records, newRecord]);
+    setEndFrames({ ...endFrames, [`${personId}-${startFrame}`]: 0 });
+  };
+
+  const handleEndFrameChange = (recordId: string, value: number) => {
+    setEndFrames({ ...endFrames, [recordId]: value });
+  };
+
   return (
     <div className="flex flex-col h-full">
       {dataPathOK === false ? (
@@ -84,7 +90,7 @@ export default function Recorder() {
           </div>
         </div>
       ) : (
-        <Dialog>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger className="w-full" asChild>
             <Button variant="outline" className="w-full">Record</Button>
           </DialogTrigger>
@@ -100,21 +106,44 @@ export default function Recorder() {
                 <Label className="text-right">
                   Person ID
                 </Label>
-                <Input id="person_id" className="col-span-3" />
+                <Input id="person_id" type="number" value={personId} onChange={(e) => setPersonId(parseInt(e.target.value))} className="col-span-3" />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right">
                   Start Frame
                 </Label>
-                <Input id="start_frame" className="col-span-3" />
+                <Input id="start_frame" type="number" value={startFrame} onChange={(e) => setStartFrame(parseInt(e.target.value))} className="col-span-3" />
               </div>
             </div>
             <DialogFooter>
-              <Button className="w-full">Record</Button>
+              <DialogClose>
+                <Button className="w-full" onClick={handleRecord}>Record Data</Button>
+              </DialogClose>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       )}
+      <div className="flex flex-col space-y-2 p-4">
+        <div>Current Recording: </div>
+        {records.map((record) => {
+          const recordId = `${record.id}-${record.start_frame}`;
+          return (
+            <div key={recordId} className="grid grid-cols-5 gap-4 items-center">
+              <div className="col-span-1">ID: {record.id}</div>
+              <div className="col-span-1">Start: {record.start_frame}</div>
+              <Input
+                type="number"
+                value={endFrames[recordId] || ''}
+                onChange={(e) => handleEndFrameChange(recordId, parseInt(e.target.value))}
+                className="col-span-1"
+                placeholder="End Frame"
+              />
+              <Button variant="outline" className="col-span-1">Location</Button>
+              <Button variant="outline" className="col-span-1">Duplicate</Button>
+            </div>
+          );
+        })}
+      </div>
       <div className="overflow-y-auto flex-grow pt-4 w-full">
         <Tabs defaultValue="incorrect_location" className="w-full">
           <TabsList className="w-full">
