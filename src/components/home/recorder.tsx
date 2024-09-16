@@ -8,6 +8,7 @@ import { checkPath, loadJSON } from "~/app/actions/files";
 import DataTable from "./data-table";
 import { columns } from "./columns";
 import Cookies from 'js-cookie';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 
 export type FrameRange = {
   id: number;
@@ -75,10 +76,12 @@ export default function Recorder() {
   return (
     <div className="flex flex-col h-full">
       {dataPathOK === false ? (
-        <div>
-          <Input type="text" value={dataPath} onChange={(e) => setDataPath(e.target.value)} />
-          <Button onClick={handleCheckPath}>Check</Button>
-          <Button onClick={SavePath} variant="outline">Save</Button>
+        <div className="flex flex-col space-y-2 p-4">
+          <Input type="text" value={dataPath} onChange={(e) => setDataPath(e.target.value)} className="w-full" />
+          <div className="flex gap-2 ">
+            <Button onClick={handleCheckPath} className="w-1/2">Check</Button>
+            <Button onClick={SavePath} variant="outline" className="w-1/2">Save</Button>
+          </div>
         </div>
       ) : (
         <Dialog>
@@ -112,8 +115,19 @@ export default function Recorder() {
           </DialogContent>
         </Dialog>
       )}
-      <div className="overflow-y-auto flex-grow">
-        <DataTable columns={columns} data={data.incorrect_location} />
+      <div className="overflow-y-auto flex-grow pt-4 w-full">
+        <Tabs defaultValue="incorrect_location" className="w-full">
+          <TabsList className="w-full">
+            <TabsTrigger value="incorrect_location" className="flex-1">Incorrect Location</TabsTrigger>
+            <TabsTrigger value="duplicate" className="flex-1">Duplicate</TabsTrigger>
+          </TabsList>
+          <TabsContent value="incorrect_location">
+            <DataTable columns={columns} data={data.incorrect_location} />
+          </TabsContent>
+          <TabsContent value="duplicate">
+            <DataTable columns={columns} data={data.duplicate} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

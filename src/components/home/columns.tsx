@@ -34,7 +34,7 @@ export const columns: ColumnDef<FrameRange>[] = [
       return (
         <div className="flex items-center gap-2">
           <span>{frameRange.end_frame}</span>
-          <Button variant="ghost">
+          <Button variant="ghost" onClick={() => useVideoPlayerStore.getState().setFrame(frameRange.end_frame)}>
             <FaEye />
           </Button>
         </div>

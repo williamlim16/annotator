@@ -29,6 +29,7 @@ export default function VideoPlayer({ src }: { src: string }) {
   const rafRef = useRef<number | null>(null);
   const [videoSize, setVideoSize] = useState({ width: 0, height: 0 });
   const [aspectRatio, setAspectRatio] = useState(16 / 9); // Default aspect ratio
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -90,8 +91,13 @@ export default function VideoPlayer({ src }: { src: string }) {
   useEffect(() => {
     const video = videoRef.current;
     if (video && frame !== 0 && !isNaN(frame)) {
-      console.log(frame)
+      setIsLoading(true);
       video.currentTime = frame / 10;
+      const handleSeeked = () => {
+        setIsLoading(false);
+        video.removeEventListener('seeked', handleSeeked);
+      };
+      video.addEventListener('seeked', handleSeeked);
     }
   }, [frame]);
 
@@ -131,7 +137,7 @@ export default function VideoPlayer({ src }: { src: string }) {
           className="overflow-hidden"
           style={{
             width: '100%',
-            paddingTop: `${(1 / aspectRatio) * 100}%`, // Set height based on aspect ratio
+            paddingTop: `${(1 / aspectRatio) * 100}%`,
             position: 'relative',
           }}
         >
@@ -142,18 +148,26 @@ export default function VideoPlayer({ src }: { src: string }) {
             <source src={`/api/video?path=${encodeURIComponent(src)}`} type="video/mp4" />
             Your browser does not support the video tag.
           </video>
-          <canvas
-            ref={canvasRef}
-            className="absolute top-0 left-0 cursor-move"
-            style={{
-              width: '100%',
-              height: '100%',
-            }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-          />
+          <div className="absolute top-0 left-0 w-full h-full">
+            {isLoading ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
+                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-white"></div>
+              </div>
+            ) : (
+              <canvas
+                ref={canvasRef}
+                className="absolute top-0 left-0 cursor-move"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                }}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+              />
+            )}
+          </div>
         </div>
       </div>
       <div className="w-1/2 overflow-y-auto" style={{ maxHeight: `${(1 / aspectRatio) * 50}vw` }}>
@@ -166,24 +180,24 @@ export default function VideoPlayer({ src }: { src: string }) {
             <Input type="number" value={frame} onChange={(e) => setFrame(parseInt(e.target.value))} />
           </div>
           <div className="flex gap-4 mt-5 w-full">
-            <Button variant="outline" onClick={() => moveFrame(-1)}>-1</Button>
-            <Button variant="outline" onClick={() => moveFrame(-10)}>-10</Button>
+            <Button variant="outline" onClick={() => moveFrame(-1)} disabled={isLoading}>-1</Button>
+            <Button variant="outline" onClick={() => moveFrame(-10)} disabled={isLoading}>-10</Button>
             <Button variant="outline" onClick={() => {
               const video = videoRef.current;
               if (video) {
                 video.play();
               }
-            }}><FaPlay />
+            }} disabled={isLoading}><FaPlay />
             </Button>
             <Button variant="outline" onClick={() => {
               const video = videoRef.current;
               if (video) {
                 video.pause();
               }
-            }}><FaPause />
+            }} disabled={isLoading}><FaPause />
             </Button>
-            <Button variant="outline" onClick={() => moveFrame(1)}>+1</Button>
-            <Button variant="outline" onClick={() => moveFrame(10)}>+10</Button>
+            <Button variant="outline" onClick={() => moveFrame(1)} disabled={isLoading}>+1</Button>
+            <Button variant="outline" onClick={() => moveFrame(10)} disabled={isLoading}>+10</Button>
           </div>
         </div>
 
