@@ -3,10 +3,11 @@ import { Label } from "~/components/ui/label";
 import { Input } from "~/components/ui/input";
 import { Button } from "~/components/ui/button";
 import { DialogHeader, DialogFooter } from "~/components/ui/dialog";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { checkPath, loadJSON } from "~/app/actions/files";
 import DataTable from "./data-table";
 import { columns } from "./columns";
+import Cookies from 'js-cookie';
 
 export type FrameRange = {
   id: number;
@@ -51,6 +52,17 @@ export default function Recorder() {
     duplicate: []
   });
 
+  const SavePath = useCallback(() => {
+    Cookies.set('jsonPath', dataPath)
+  }, [dataPath])
+
+  useEffect(() => {
+    const savedPath = Cookies.get('jsonPath');
+    if (savedPath) {
+      setDataPath(savedPath);
+    }
+  }, []);
+
   const handleCheckPath = async () => {
     const isValid = await checkPath(dataPath);
     setDataPathOK(isValid);
@@ -60,15 +72,15 @@ export default function Recorder() {
     }
   };
 
-
   return (
-    <div>
-      {dataPathOK === false ? (<>
+    <div className="flex flex-col h-full">
+      {dataPathOK === false ? (
         <div>
           <Input type="text" value={dataPath} onChange={(e) => setDataPath(e.target.value)} />
           <Button onClick={handleCheckPath}>Check</Button>
+          <Button onClick={SavePath} variant="outline">Save</Button>
         </div>
-      </>) : (
+      ) : (
         <Dialog>
           <DialogTrigger className="w-full" asChild>
             <Button variant="outline" className="w-full">Record</Button>
@@ -100,7 +112,9 @@ export default function Recorder() {
           </DialogContent>
         </Dialog>
       )}
-      <DataTable columns={columns} data={data.incorrect_location} />
+      <div className="overflow-y-auto flex-grow">
+        <DataTable columns={columns} data={data.incorrect_location} />
+      </div>
     </div>
   )
 }

@@ -28,12 +28,14 @@ export default function VideoPlayer({ src }: { src: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
   const [videoSize, setVideoSize] = useState({ width: 0, height: 0 });
+  const [aspectRatio, setAspectRatio] = useState(16 / 9); // Default aspect ratio
 
   useEffect(() => {
     const video = videoRef.current;
     if (video) {
       const updateVideoSize = () => {
         setVideoSize({ width: video.videoWidth, height: video.videoHeight });
+        setAspectRatio(video.videoWidth / video.videoHeight);
       };
       video.addEventListener('loadedmetadata', updateVideoSize);
       return () => {
@@ -123,28 +125,38 @@ export default function VideoPlayer({ src }: { src: string }) {
   };
 
   return (
-    <div className="flex gap-4 pb-44">
-      <div className="relative w-full mt-4">
-        <video className="w-full" ref={videoRef}>
-          <source src={`/api/video?path=${encodeURIComponent(src)}`} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-        <canvas
-          ref={canvasRef}
-          className="absolute top-0 left-0 cursor-move"
+    <div className="flex gap-4">
+      <div className="relative w-1/2">
+        <div
+          className="overflow-hidden"
           style={{
-            width: `${videoSize.width}px`,
-            height: `${videoSize.height}px`,
-            maxWidth: '100%',
-            maxHeight: '100%',
+            width: '100%',
+            paddingTop: `${(1 / aspectRatio) * 100}%`, // Set height based on aspect ratio
+            position: 'relative',
           }}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-        />
+        >
+          <video
+            className="absolute top-0 left-0 w-full h-full object-contain"
+            ref={videoRef}
+          >
+            <source src={`/api/video?path=${encodeURIComponent(src)}`} type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          <canvas
+            ref={canvasRef}
+            className="absolute top-0 left-0 cursor-move"
+            style={{
+              width: '100%',
+              height: '100%',
+            }}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+          />
+        </div>
       </div>
-      <div className="w-full">
+      <div className="w-1/2 overflow-y-auto" style={{ maxHeight: `${(1 / aspectRatio) * 50}vw` }}>
         <h3 className="text-lg font-bold">Playback Controls</h3>
         <div className="border border-gray-300 rounded-md p-2 mb-2">
           <h4 className="text-sm text-gray-500 ">
