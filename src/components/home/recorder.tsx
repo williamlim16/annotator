@@ -10,6 +10,7 @@ import { columns } from "./columns";
 import Cookies from 'js-cookie';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "~/components/ui/tabs";
 import { useToast } from "~/hooks/use-toast";
+import { recordingColumns } from "./recording_columns";
 
 export type FrameRange = {
   id: number;
@@ -17,7 +18,7 @@ export type FrameRange = {
   end_frame: number;
 };
 
-type FrameStart = Omit<FrameRange, 'end_frame'>;
+export type FrameStart = Omit<FrameRange, 'end_frame'>;
 
 export type JSONDataStructure = {
   incorrect_location: FrameRange[];
@@ -125,7 +126,7 @@ export default function Recorder() {
       )}
       <div className="flex flex-col space-y-2 p-4">
         <div>Current Recording: </div>
-        {records.map((record) => {
+        {/* {records.map((record) => {
           const recordId = `${record.id}-${record.start_frame}`;
           return (
             <div key={recordId} className="grid grid-cols-5 gap-4 items-center">
@@ -142,7 +143,9 @@ export default function Recorder() {
               <Button variant="outline" className="col-span-1">Duplicate</Button>
             </div>
           );
-        })}
+        })} */}
+        <DataTable columns={recordingColumns} data={records} />
+
       </div>
       <div className="overflow-y-auto flex-grow pt-4 w-full">
         <Tabs defaultValue="incorrect_location" className="w-full">
